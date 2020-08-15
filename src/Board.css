@@ -1,0 +1,21 @@
+.block {
+  /* border-radius: 2px; */
+  /* border: 0.5px solid; */
+  box-sizing: border-box;
+  /* transition: background-color 0.1s ease-out; */
+  background-color: #CDDC39;
+}
+
+.block.active {
+  background-color: #795548;
+}
+
+.block.berry {
+  background-color: red;
+}
+
+*:focus{
+  border: none;
+  outline: none;
+}
+
