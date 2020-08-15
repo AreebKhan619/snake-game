@@ -251,8 +251,6 @@ class Board extends Component {
       this.setState({
         intervalKey: t
       });
-
-      this.moveSnake(key, "l");
     } else if (
       key === 38 &&
       this.state.lastMoveKey !== 38 &&
