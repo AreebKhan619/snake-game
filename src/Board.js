@@ -3,109 +3,106 @@ import GameContext from "./Context";
 import "./Board.css";
 // import Snake from "./Snake";
 class Board extends Component {
- constructor(props){
-   super(props)
-   this.gameRef = React.createRef()
-   this.state = {
-    rows: "",
-    cols: "",
-    intervalKey: 0,
-    position: [],
-    // position: [{"row":10,"col":15},{"row":11,"col":15},{"row":12,"col":15}]
-    //the first element of this array will be the head, the one behind the head will be the second element, and so on.
-    matrix: [],
-    // matrix : [
-    // [null,null,null,6,null], 6 is in first row and fourth column
-    // [null,2,null,null,null], 2 is in second row and second column, length of each array will be equal to the width of the board
-    // ]
-    lastMoveKey: "",
-    isGameOver: false,
-    berry: {
-      row: '',
-      col: ''
-    }
-  };
- }
-
-  componentDidMount() {
-    this.startOver();
-    this.snakeNavigator(38);
+  constructor(props) {
+    super(props);
+    this.gameRef = React.createRef();
+    this.state = {
+      rows: "",
+      cols: "",
+      intervalKey: 0,
+      position: [],
+      // position: [285,315,345]
+      //the first element of this array will be the head's location in the matrix index, the one behind the head will be of second element's, and so on.
+      matrix: [],
+      // matrix : [
+      // null, null, null, null, true, null, true, null, null
+      // ]
+      // we have the number of rows, number of columns, number of blocks in rows and number of blocks in columns.
+      direction: "",
+      isGameOver: false,
+      berry: ""
+    };
   }
 
-  startOver = () => {
+  componentDidMount() {
     const { height, width, blockUnitHeight, blockUnitWidth } = this.context;
     const blockRows = height / blockUnitHeight;
     const blockCols = width / blockUnitWidth;
-
-    let tempArray = [];
-    for (let i = 0; i < blockRows; i++) {
-      tempArray.push(Array(blockCols).fill(null));
-    }
-
-    // console.log(tempArray[(blockRows)/2])
-    tempArray[blockRows / 2][blockCols / 2] = true;
-    tempArray[blockRows / 2 + 1][blockCols / 2] = true;
-    tempArray[blockRows / 2 + 2][blockCols / 2] = true;
-    tempArray[blockRows / 2 + 3][blockCols / 2] = true;
-
-    let pos = [
-      { row: blockRows / 2, col: blockCols / 2 }, //the first element of this array will be the head
-      { row: blockRows / 2 + 1, col: blockCols / 2 },
-      { row: blockRows / 2 + 2, col: blockCols / 2 },
-      { row: blockRows / 2 + 3, col: blockCols / 2 }
-    ];
+    // this.setState({blocks:{row:blockRows,col:blockCols}})
 
     this.setState({
       rows: blockRows - 1, //subtracted one for index purposes
-      cols: blockCols - 1,
-      position: pos,
-      isGameOver: false,
-      lastMoveKey: "",
-      intervalKey: ""
-      // matrix: tempArray
+      cols: blockCols - 1
     });
+    this.startOver(blockRows, blockCols);
+    // this.snakeNavigator(38);
+  }
 
-    this.insertBerry(blockRows - 1, blockCols - 1, pos, tempArray);
-    // this.snakeNavigator(38)
-    this.gameRef.current.focus()
-    // console.log(ReactDOM.findDOMNode(this.refs.game))
+  startOver = (
+    blockRows = this.state.rows + 1,
+    blockCols = this.state.cols + 1
+  ) => {
+    const multiple = blockRows * blockCols;
+    let tempArray = Array(multiple).fill(null);
+
+    // snake head in the middle
+    // for a 30x20 matrix, it will be 15x10
+    // general formula = (width of grid * (x location)) + (y location)
+    // center (head of the snake) will be at 30w*20h will be at 30*(10-1) + 30/2 = 285
+
+    const _locationOfHead = blockCols * (blockRows / 2 - 1) + blockCols / 2;
+    const _locationOfSecond = blockCols * (blockRows / 2) + blockCols / 2;
+    const _locationOfThird = blockCols * (blockRows / 2 + 1) + blockCols / 2;
+
+    const _locationOfFourth = blockCols * (blockRows / 2 + 2) + blockCols / 2;
+
+    tempArray[_locationOfHead] = true;
+    tempArray[_locationOfSecond] = true;
+    tempArray[_locationOfThird] = true;
+    tempArray[_locationOfFourth] = true;
+
+    let pos = [
+      _locationOfHead,
+      _locationOfSecond,
+      _locationOfThird,
+      _locationOfFourth
+    ];
+
+    this.insertBerry(multiple, pos, tempArray);
+    this.snakeNavigator(38)
+    this.gameRef.current.focus();
+
+    this.setState({
+      isGameOver: false,
+      // intervalKey: "",
+      // direction: "",
+      position: pos,
+      matrix: tempArray
+    });
   };
 
   isBerryEaten = (p = this.state.position) => {
     const b = this.state.berry;
-    if (p[0].row === b.row && p[0].col === b.col) {
+    if (p[0] === b) {
       return true;
     } else {
       return false;
     }
   };
 
-  insertBerry = (
-    ur = this.state.rows,
-    uc = this.state.cols,
-    p = this.state.position,
-    m = this.state.matrix
-  ) => {
-    let rowForBerry = this.randomNum(0, ur);
-    let colForBerry = this.randomNum(0, uc);
-    // console.log(rowForBerry,colForBerry)
-    // console.log(p)
+  insertBerry = (prod, p = this.state.position, m = this.state.matrix) => {
+    let locationForBerry = this.randomNum(0, prod);
 
-    let t = p.filter(_snakeBlock => {
-      return _snakeBlock.row === rowForBerry && _snakeBlock.col === colForBerry;
-    });
-    if (t.length > 0) {
-      rowForBerry = this.randomNum(0, ur);
-      colForBerry = this.randomNum(0, uc);
+    if (p.includes(locationForBerry)) {
+      locationForBerry = this.randomNum(0, prod);
+      // failing logic what if the berry appears again?
     }
-    let _m = m.slice();
-    _m[rowForBerry][colForBerry] = "berry";
+
+    m[locationForBerry] = "berry";
+
     this.setState({
-      matrix: _m,
-      berry: {
-        row: rowForBerry,
-        col: colForBerry
-      }
+      matrix: m,
+      berry: locationForBerry
     });
   };
 
@@ -117,232 +114,244 @@ class Board extends Component {
   eatYourselfCheck = _positionArray => {
     const head = _positionArray[0];
 
-    let t = _positionArray.filter(x => {
-      return x.col === head.col && x.row === head.row;
-    });
+    let b = _positionArray.slice(1);
 
     // console.log(t.length>1)
-    return t.length > 1;
+    return !(b.indexOf(head) < 0);
   };
 
-  moveSnake = (code = 38, dir) => {
-    this.setState({
-      lastMoveKey: code
-    });
-
+  moveSnake = dir => {
+    const multiple = (this.state.rows + 1) * (this.state.cols + 1);
     let p = this.state.position;
     let m = this.state.matrix;
+    let r = this.state.rows + 1;
+    let w = this.state.cols + 1; //width
     let pc = p.slice();
     // console.log(dir);
 
+    console.log(w);
+
     if (dir === "u" || dir === "d") {
       if (
-        (dir === "u" && this.state.position[0].row === 0) ||
-        (dir === "d" && this.state.position[0].row === this.state.rows)
+        (dir === "u" && this.state.position[0] < w) ||
+        (dir === "d" && this.state.position[0] > multiple - w - 1)
       ) {
         // console.log("out of bounds u&d");
-        this.setState({
-          isGameOver: true
-        });
+        
         clearInterval(this.state.intervalKey);
+        this.setState({
+          isGameOver: true,
+          intervalKey:""
+        });
       } else {
-        var obj;
-
         p.map((x, i) => {
           if (i === 0) {
             if (dir === "u") {
-              m[p[i].row - 1][p[i].col] = true;
-              obj = { row: pc[i].row - 1, col: pc[i].col };
+              m[p[i] - w] = true;
+              p[i] = pc[i] - w;
             } else {
-              m[p[i].row + 1][p[i].col] = true;
-              obj = { row: pc[i].row + 1, col: pc[i].col };
+              m[p[i] + w] = true;
+              p[i] = pc[i] + w;
             }
-            p[0] = obj;
           } else {
-            if (i === p.length - 1) {
-              m[p[i].row][p[i].col] = null;
+            if (dir === "u") {
+              if (i === p.length - 1) {
+                m[p[i]] = null;
+              }
+              p[i] = pc[i - 1];
+            } else {
+              if (i === p.length - 1) {
+                m[p[i]] = null;
+              }
+              p[i] = pc[i - 1];
             }
-            let obj = { row: pc[i - 1].row, col: pc[i - 1].col };
-            p[i] = obj;
           }
+
           this.setState({
             position: p,
             matrix: m
           });
         });
-        // console.log(this.eatYourselfCheck(p))
+
         if (this.eatYourselfCheck(p)) {
-          this.setState({
-            isGameOver: true
-          });
           clearInterval(this.state.intervalKey);
+          this.setState({
+            isGameOver: true,
+            intervalKey: ""
+          });
         }
         if (this.isBerryEaten(p)) {
-          this.insertBerry(undefined, undefined, p, m);
-          this.increaseSnakeLength();
+          this.insertBerry((w - 1) * (r - 1), p, m);
+          this.increaseSnakeLength(p, m, w, dir);
         }
       }
     } else if (dir === "l" || dir === "r") {
       if (
-        (dir === "l" && this.state.position[0].col === 0) ||
-        (dir === "r" && this.state.position[0].col === this.state.cols)
+        (dir === "l" && this.state.position[0] === 0) ||
+        (dir === "r" && this.state.position[0] === (w-1))
       ) {
         // console.log("out of bounds r&l");
-        this.setState({
-          isGameOver: true
-        });
         clearInterval(this.state.intervalKey);
+        this.setState({
+          isGameOver: true,
+          intervalKey: ''
+        });
       } else {
-        // following is in case of r:
-        p.map((x, i) => {
-          if (i === 0) {
-            var obj;
-            if (dir === "r") {
-              m[p[i].row][p[i].col + 1] = true;
-              obj = { row: pc[i].row, col: pc[i].col + 1 };
-            } else {
-              m[p[i].row][p[i].col - 1] = true;
 
-              obj = { row: pc[i].row, col: pc[i].col - 1 };
+      p.map((x, i) => {
+        if (i === 0) {
+          if (dir === "l") {
+            m[p[i] - 1] = true;
+            p[i] = pc[i] - 1;
+          } else {
+            // if(i=== (p.length -1)){
+            //   m[p[i]]=null
+            // }
+            m[p[i] + 1] = true;
+            p[i] = pc[i] + 1;
+          }
+        } else {
+          if (dir === "l") {
+            if (i === p.length - 1) {
+              m[p[i]] = null;
             }
-
-            p[0] = obj;
+            p[i] = pc[i - 1];
           } else {
             if (i === p.length - 1) {
-              m[p[i].row][p[i].col] = null;
+              m[p[i]] = null;
+              p[i] = pc[i - 1];
             }
-            let obj = { row: pc[i - 1].row, col: pc[i - 1].col };
-            p[i] = obj;
+            m[p[i]] = m[pc[i - 1]];
+            p[i] = pc[i - 1];
           }
-          this.setState({
-            position: p,
-            matrix: m
-          });
+        }
+
+        this.setState({
+          position: p,
+          matrix: m
         });
-        if (this.eatYourselfCheck(p)) {
-          this.setState({
-            isGameOver: true
-          });
-          clearInterval(this.state.intervalKey);
-        }
-        if (this.isBerryEaten(p)) {
-          this.insertBerry(undefined, undefined, p, m);
-          this.increaseSnakeLength();
-        }
+      });
+
+      if (this.eatYourselfCheck(p)) {
+        clearInterval(this.state.intervalKey);
+        this.setState({
+          isGameOver: true,
+          intervalKey: ''
+        });
+      }
+      if (this.isBerryEaten(p)) {
+        this.insertBerry(w * r, p, m);
+        this.increaseSnakeLength(p, m, w, dir);
+      }
+
       }
     }
   };
 
   snakeNavigator = key => {
-    const interval = 200;
+    if(!this.state.isGameOver){
+    const interval = 100;
 
     if (
       key === 37 &&
-      this.state.lastMoveKey !== 37 &&
-      this.state.lastMoveKey !== 39
+      this.state.direction !== "l" &&
+      this.state.direction !== "r"
     ) {
       // console.log("left");
       clearInterval(this.state.intervalKey);
       let t = setInterval(() => {
-        this.moveSnake(key, "l");
-        console.log("left");
+        this.moveSnake("l");
+        // console.log("left");
       }, interval);
 
       this.setState({
-        intervalKey: t
+        intervalKey: t,
+        direction: "l"
       });
-
-      this.moveSnake(key, "l");
     } else if (
       key === 38 &&
-      this.state.lastMoveKey !== 38 &&
-      this.state.lastMoveKey !== 40
+      this.state.direction !== "u" &&
+      this.state.direction !== "d"
     ) {
       // console.log("up");
       clearInterval(this.state.intervalKey);
 
       let t = setInterval(() => {
-        this.moveSnake(key, "u");
-        console.log("up");
+        this.moveSnake("u");
+        // console.log("up");
       }, interval);
 
       this.setState({
-        intervalKey: t
+        intervalKey: t,
+        direction: "u"
       });
     } else if (
       key === 39 &&
-      this.state.lastMoveKey !== 39 &&
-      this.state.lastMoveKey !== 37
+      this.state.direction !== "r" &&
+      this.state.direction !== "l"
     ) {
       // console.log("right");
       clearInterval(this.state.intervalKey);
 
       let t = setInterval(() => {
-        this.moveSnake(key, "r");
-        console.log("right");
+        this.moveSnake("r");
+        // console.log("right");
       }, interval);
 
       this.setState({
-        intervalKey: t
+        intervalKey: t,
+        direction: "r"
       });
     } else if (
       key === 40 &&
-      this.state.lastMoveKey !== 40 &&
-      this.state.lastMoveKey !== 38
+      this.state.direction !== "d" &&
+      this.state.direction !== "u"
     ) {
       // console.log("down");
       clearInterval(this.state.intervalKey);
 
       let t = setInterval(() => {
-        this.moveSnake(key, "d");
+        this.moveSnake("d");
         console.log("down");
       }, interval);
 
       this.setState({
-        intervalKey: t
+        intervalKey: t,
+        direction: "d"
       });
     }
+  }
   };
 
-  increaseSnakeLength = () => {
-    const t = this.state.position.slice().reverse();
-    // console.log(this.state.position.slice(-1)[0])
-    const last = t[0];
-    const secondLast = t[1];
+  increaseSnakeLength = (p, m, w, dir) => {
+    const t = this.state.position.slice();
 
-    console.log(last, secondLast);
-    let p = this.state.position.slice();
-    let m = this.state.matrix;
+    const last = t[t.length - 1];
 
-    if (last.row > secondLast.row) {
-      // that means the snake is facing upwards
-      p.push({
-        col: t[0].col,
-        row: t[0].row + 1
-      });
-      m[t[0].row + 1][t[0].col] = true;
-    } else if (last.row < secondLast.row) {
-      p.push({
-        col: t[0].col,
-        row: t[0].row - 1
-      });
-      m[t[0].row - 1][t[0].col] = true;
-    } else if (last.col > secondLast.col) {
-      p.push({
-        col: t[0].col + 1,
-        row: t[0].row
-      });
-      m[t[0].row][t[0].col + 1] = true;
-    } else if (last.col < secondLast.col) {
-      p.push({
-        col: t[0].col - 1,
-        row: t[0].row
-      });
-      m[t[0].row][t[0].col - 1] = true;
+    const diff = last - t[t.length - 2];
+
+    let pushable;
+
+    if (diff === w) {
+      //meaning the last two are at 90deg to each other
+      // t.push(t[t.length-1]+w)
+      pushable = last + w;
+    } else if (diff === -w) {
+      // t.push(t[t.length-1]-w)
+      pushable = last - w;
+    } else if (diff === 1) {
+      // t.push(t[t.length-1]+1)
+      pushable = last + 1;
+    } else if (diff === -1) {
+      // t.push(t[t.length-1]-1)
+      pushable = last - 1;
     }
 
+    t.push(pushable);
+    m[pushable] = true;
+
     this.setState({
-      position: p,
+      position: t,
       matrix: m
     });
   };
@@ -355,36 +364,36 @@ class Board extends Component {
           style={{
             width: "100%",
             height: "100%",
-            background: "aliceblue",
+            background: "radial-gradient(#CDDC39, transparent)",
             display: "flex",
             flexWrap: "wrap",
             position: "absolute",
             filter: this.state.isGameOver ? "blur(5px)" : ""
           }}
           tabIndex="0"
-          onKeyDown={e => this.snakeNavigator(e.keyCode)}
+          onKeyDown={e => {
+            e.preventDefault()
+              this.snakeNavigator(e.keyCode)
+          }}
         >
           {/* {blocks()} */}
-          {this.state.matrix.map((_arrayOfRow, j) => {
-            return _arrayOfRow.map((block, i) => {
-              return (
-                <div
-                  key={i}
-                  // className="block"
-                  className={
-                    `block ` +
-                    (block === null ? `` : block === true ? `active` : `berry`)
-                  }
-                  style={{
-                    height: this.context.blockUnitHeight,
-                    width: this.context.blockUnitWidth
-                  }}
-                >
-                  {/* {j}
-                {i} */}
-                </div>
-              );
-            });
+          {this.state.matrix.map((_block, i) => {
+            return (
+              <div
+                key={i}
+                // className="block"
+                className={
+                  `block ` +
+                  (_block === null ? `` : _block === true ? `active` : `berry`)
+                }
+                style={{
+                  height: this.context.blockUnitHeight,
+                  width: this.context.blockUnitWidth
+                }}
+              >
+                
+              </div>
+            );
           })}
           {/* <Snake /> */}
         </div>
@@ -406,7 +415,6 @@ class Board extends Component {
             <button
               onClick={() => {
                 this.startOver();
-                this.snakeNavigator(38);
               }}
             >
               Start Over
