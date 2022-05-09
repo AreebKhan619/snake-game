@@ -1,6 +1,6 @@
 import React, { Component } from "react";
-import GameContext from "./Context";
-import "./Board.css";
+import GameContext from "../../context"
+import "./board.module.css";
 // import Snake from "./Snake";
 class Board extends Component {
   constructor(props) {

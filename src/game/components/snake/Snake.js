@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import GameContext from "./Context";
+import GameContext from "../../context";
 import "./Board.css";
 class Snake extends Component {
   constructor(props) {
@@ -7,10 +7,6 @@ class Snake extends Component {
     this.state = {
       lastMoveKey: 40
     };
-  }
-
-  componentDidMount() {
-    console.log(this.context);
   }
 
   mover = (_blockid, i, code) => {
